@@ -74,4 +74,9 @@ with tab_dec:
         if pesan_terenkripsi:
             # Menggunakan waktu yang sama untuk dekripsi
             hasil = process_cipher(pesan_terenkripsi, current_h, current_m, mode="Dekripsi")
-            st.
+            st.info(f"**Hasil Dekripsi (Pesan Asli):** {hasil}")
+        else:
+            st.warning("Masukkan kode rahasia.")
+
+st.markdown("---")
+st.caption("Aplikasi otomatis mengambil waktu server yang disesuaikan ke Asia/Jakarta.")
