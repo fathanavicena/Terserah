@@ -1,26 +1,29 @@
 import streamlit as st
 import datetime
-import pytz  # Library untuk mengatur zona waktu
+import pytz
 
 # --- Konfigurasi Halaman ---
 st.set_page_config(page_title="Digital Clock Cipher", page_icon="🔐")
 
-# --- Logika Waktu Jakarta ---
-def get_jakarta_time():
+# --- Fungsi Mengambil Waktu Jakarta ---
+def get_current_jakarta_time():
+    # Menetapkan zona waktu ke Asia/Jakarta (WIB)
     tz_jakarta = pytz.timezone('Asia/Jakarta')
     now = datetime.datetime.now(tz_jakarta)
     return now.hour, now.minute
 
-# --- Fungsi Cipher ---
+# --- Fungsi Logika Kriptografi ---
 def process_cipher(text, hour, minute, mode="Enkripsi"):
+    # Alfabet tanpa huruf Z (25 karakter)
     alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXY"
     shift = (hour + minute) % 25
     
     if mode == "Dekripsi":
         shift = -shift
         
-    result = ""
+    # Normalisasi: Kapital, spasi tetap, Z jadi Y
     text = text.upper().replace('Z', 'Y')
+    result = ""
     
     for char in text:
         if char in alphabet:
@@ -36,37 +39,39 @@ def process_cipher(text, hour, minute, mode="Enkripsi"):
 st.title("🔐 Digital Clock Cipher (No-Z Edition)")
 
 st.write("""
-Aplikasi ini menggunakan waktu **Jakarta (WIB)** saat ini sebagai kunci enkripsi dinamis.
+Aplikasi ini membaca waktu **Jakarta (WIB)** saat ini secara otomatis sebagai kunci enkripsi. 
+**Aturan:** Huruf **Z** akan dikonversi menjadi **Y**.
 """)
 
-# Mengambil waktu Jakarta secara otomatis
-auto_h, auto_m = get_jakarta_time()
+# Ambil waktu otomatis saat ini
+current_h, current_m = get_current_jakarta_time()
 
-# Input Jam dan Menit (Otomatis terisi namun tetap bisa diubah manual jika perlu)
+# Layout Input (ReadOnly agar user tahu waktu yang terbaca otomatis)
 col1, col2 = st.columns(2)
 with col1:
-    h = st.number_input("Input Jam (H)", min_value=0, max_value=23, value=auto_h)
+    h = st.number_input("Jam Saat Ini (H)", value=current_h, disabled=True)
 with col2:
-    m = st.number_input("Input Menit (M)", min_value=0, max_value=59, value=auto_m)
+    m = st.number_input("Menit Saat Ini (M)", value=current_m, disabled=True)
 
-st.info(f"🕒 Waktu Jakarta saat ini: **{auto_h:02d}:{auto_m:02d}** (Kunci: {h+m})")
+st.info(f"🕒 Terdeteksi Waktu Jakarta: **{current_h:02d}:{current_m:02d}** (Kunci Shift: {current_h + current_m})")
 
 # Tab Enkripsi & Dekripsi
 tab_enc, tab_dec = st.tabs(["Enkripsi", "Dekripsi"])
 
 with tab_enc:
     pesan_asli = st.text_area("Pesan Asli:", placeholder="Ketik pesan di sini...", key="enc_input")
-    if st.button("Proses Enkripsi"):
+    if st.button("Proses Enkripsi", type="primary"):
         if pesan_asli:
-            hasil = process_cipher(pesan_asli, h, m, mode="Enkripsi")
-            st.success(f"Hasil Enkripsi: {hasil}")
+            # Menggunakan waktu terbaru saat tombol diklik
+            hasil = process_cipher(pesan_asli, current_h, current_m, mode="Enkripsi")
+            st.success(f"**Hasil Enkripsi:** {hasil}")
+        else:
+            st.warning("Masukkan pesan terlebih dahulu.")
 
 with tab_dec:
-    pesan_terenkripsi = st.text_area("Pesan Terenkripsi:", placeholder="Masukkan kode rahasia...", key="dec_input")
-    if st.button("Proses Dekripsi"):
+    pesan_terenkripsi = st.text_area("Pesan Terenkripsi:", placeholder="Tempel kode rahasia...", key="dec_input")
+    if st.button("Proses Dekripsi", type="primary"):
         if pesan_terenkripsi:
-            hasil = process_cipher(pesan_terenkripsi, h, m, mode="Dekripsi")
-            st.info(f"Pesan Asli: {hasil}")
-
-st.markdown("---")
-st.caption("Dikembangkan dengan Python & Streamlit | Zona Waktu: Asia/Jakarta")
+            # Menggunakan waktu yang sama untuk dekripsi
+            hasil = process_cipher(pesan_terenkripsi, current_h, current_m, mode="Dekripsi")
+            st.
