@@ -24,7 +24,7 @@ def process_cipher(text, hour, minute, mode="Enkripsi"):
             result += alphabet[new_idx]
         else:
             result += char # Spasi, angka, dan simbol tetap
-    return result, abs(shift) # Mengembalikan hasil dan nilai shift yang sudah di-mod
+    return result, abs(shift)
 
 # --- 2. TAMPILAN SIDEBAR ---
 st.sidebar.title("⚙️ Menu Pilihan")
@@ -40,17 +40,20 @@ st.sidebar.info("ℹ️ Huruf **Z** otomatis dikonversi menjadi **Y**.")
 tz_jkt = pytz.timezone('Asia/Jakarta')
 now_init = datetime.datetime.now(tz_jkt)
 
-if mode_waktu == "Otomatis (Jakarta)":
-    h_val = now_init.hour
-    m_val = now_init.minute
-else:
-    h_val = st.sidebar.number_input("Input Jam (H)", 0, 23, now_init.hour)
-    m_val = st.sidebar.number_input("Input Menit (M)", 0, 59, now_init.minute)
+# Inisialisasi variabel jam dan menit
+h_val = now_init.hour
+m_val = now_init.minute
 
 # --- 4. TAMPILAN UTAMA ---
 st.title("🔐 Digital Clock Cipher (No-Z Edition)")
 
-# (Baris Info Waktu di sini sudah dihapus sesuai permintaan Anda)
+# Munculkan Input Jam & Menit di halaman depan HANYA jika mode Manual dipilih
+if mode_waktu == "Manual":
+    col_h, col_m = st.columns(2)
+    with col_h:
+        h_val = st.number_input("Input Jam (H)", 0, 23, now_init.hour)
+    with col_m:
+        m_val = st.number_input("Input Menit (M)", 0, 59, now_init.minute)
 
 tab_enc, tab_dec = st.tabs(["Enkripsi", "Dekripsi"])
 
@@ -58,16 +61,16 @@ with tab_enc:
     pesan_asli = st.text_area("Pesan Asli:", placeholder="Ketik pesan di sini...")
     if st.button("Proses Enkripsi", type="primary"):
         if pesan_asli:
+            # Jika otomatis, ambil waktu terbaru tepat saat klik
             if mode_waktu == "Otomatis (Jakarta)":
                 now_curr = datetime.datetime.now(tz_jkt)
                 h_val, m_val = now_curr.hour, now_curr.minute
             
-            # Memanggil fungsi cipher
             hasil, shift_final = process_cipher(pesan_asli, h_val, m_val, "Enkripsi")
             
             st.success(f"**Hasil Enkripsi:** {hasil}")
             
-            # Tampilan Waktu & Key di akhir (Shift sudah di-Modulo 25)
+            # Tampilan Waktu & Key di akhir
             st.markdown(f"""
             <div style="background-color: #262730; padding: 15px; border-radius: 5px; border-left: 5px solid #ff4b4b; margin-top: 20px;">
                 ✅ <b>Enkripsi Berhasil!</b><br>
@@ -84,7 +87,14 @@ with tab_dec:
         if pesan_kode:
             hasil, shift_final = process_cipher(pesan_kode, h_val, m_val, "Dekripsi")
             st.info(f"**Hasil Dekripsi:** {hasil}")
-            st.caption(f"Menggunakan referensi waktu: {h_val:02d}:{m_val:02d} (Shift: {shift_final})")
+            
+            # Info waktu juga muncul saat dekripsi untuk verifikasi
+            st.markdown(f"""
+            <div style="background-color: #262730; padding: 10px; border-radius: 5px; border-left: 5px solid #00aaff; margin-top: 10px;">
+                🕒 Menggunakan referensi waktu: <b>{h_val:02d}:{m_val:02d}</b><br>
+                🔑 Key Shift: <b>{shift_final}</b>
+            </div>
+            """, unsafe_allow_html=True)
         else:
             st.error("Isi kode rahasia!")
 
