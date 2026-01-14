@@ -11,8 +11,7 @@ def process_cipher(text, hour, minute, mode="Enkripsi"):
     if mode == "Dekripsi":
         shift = -shift
         
-    # PERUBAHAN DI SINI: Huruf Z diganti menjadi Y (bukan dihapus)
-    # Ini memastikan jumlah karakter tetap dan bisa didekripsi dengan benar
+    # Aturan: Huruf Z diganti menjadi Y agar pesan tetap utuh
     text = text.upper().replace('Z', 'Y')
     
     result = ""
@@ -33,49 +32,61 @@ mode_waktu = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
-# Update pesan peringatan di sidebar
-st.sidebar.info("ℹ️ Huruf **Z** akan otomatis dikonversi menjadi **Y** agar pesan tetap sinkron saat didekripsi.")
+st.sidebar.info("ℹ️ Huruf **Z** otomatis dikonversi menjadi **Y**.")
 
-# --- 3. LOGIKA WAKTU ---
+# --- 3. LOGIKA PENGAMBILAN WAKTU ---
+# Mengambil waktu awal untuk tampilan info di atas
+tz_jkt = pytz.timezone('Asia/Jakarta')
+now_init = datetime.datetime.now(tz_jkt)
+
 if mode_waktu == "Otomatis (Jakarta)":
-    tz_jkt = pytz.timezone('Asia/Jakarta')
-    now = datetime.datetime.now(tz_jkt)
-    h_val = now.hour
-    m_val = now.minute
+    h_val = now_init.hour
+    m_val = now_init.minute
 else:
-    # Mode manual menampilkan input di kolom utama atau sidebar
-    h_val = st.sidebar.number_input("Input Jam (H)", 0, 23, 9)
-    m_val = st.sidebar.number_input("Input Menit (M)", 0, 59, 30)
+    h_val = st.sidebar.number_input("Input Jam (H)", 0, 23, now_init.hour)
+    m_val = st.sidebar.number_input("Input Menit (M)", 0, 59, now_init.minute)
 
 # --- 4. TAMPILAN UTAMA ---
 st.title("🔐 Digital Clock Cipher (No-Z Edition)")
 
-# Tampilkan jam yang sedang aktif
-st.info(f"🕒 Waktu Aktif: **{h_val:02d}:{m_val:02d}** (Kunci Shift: {h_val + m_val})")
+# Box informasi waktu aktif (sebelum diproses)
+st.info(f"🕒 Waktu Sistem Saat Ini: **{h_val:02d}:{m_val:02d}**")
 
 tab_enc, tab_dec = st.tabs(["Enkripsi", "Dekripsi"])
 
 with tab_enc:
-    pesan_asli = st.text_area("Pesan Asli:", placeholder="Ketik pesan di sini... (Contoh: ZEBRA akan diproses sebagai YEBRA)")
+    pesan_asli = st.text_area("Pesan Asli:", placeholder="Ketik pesan di sini...")
     if st.button("Proses Enkripsi", type="primary"):
         if pesan_asli:
-            # Update waktu real-time jika mode otomatis
+            # Jika otomatis, ambil waktu presisi saat tombol diklik
             if mode_waktu == "Otomatis (Jakarta)":
-                now_curr = datetime.datetime.now(pytz.timezone('Asia/Jakarta'))
+                now_curr = datetime.datetime.now(tz_jkt)
                 h_val, m_val = now_curr.hour, now_curr.minute
             
             hasil = process_cipher(pesan_asli, h_val, m_val, "Enkripsi")
+            
+            # Menampilkan hasil enkripsi
             st.success(f"**Hasil Enkripsi:** {hasil}")
+            
+            # MENAMPILKAN WAKTU DI AKHIR SETELAH ENKRIPSI (Sesuai Permintaan)
+            st.markdown(f"""
+            <div style="background-color: #262730; padding: 10px; border-radius: 5px; border-left: 5px solid #ff4b4b;">
+                ✅ <b>Enkripsi Berhasil!</b><br>
+                🕒 Waktu yang digunakan: <b>{h_val:02d}:{m_val:02d} WIB</b><br>
+                🔑 Kunci Shift: <b>{h_val + m_val}</b>
+            </div>
+            """, unsafe_allow_html=True)
         else:
             st.error("Isi pesan terlebih dahulu!")
 
 with tab_dec:
-    pesan_kode = st.text_area("Pesan Terenkripsi:", placeholder="Tempel kode rahasia di sini...")
+    pesan_kode = st.text_area("Pesan Terenkripsi:", placeholder="Tempel kode di sini...")
     if st.button("Proses Dekripsi"):
         if pesan_kode:
-            # Menggunakan waktu yang sama dengan saat enkripsi
+            # Gunakan waktu yang tertera pada input/sistem
             hasil = process_cipher(pesan_kode, h_val, m_val, "Dekripsi")
-            st.info(f"**Pesan Asli (Z menjadi Y):** {hasil}")
+            st.info(f"**Hasil Dekripsi:** {hasil}")
+            st.caption(f"Menggunakan referensi waktu: {h_val:02d}:{m_val:02d}")
         else:
             st.error("Isi kode rahasia!")
 
