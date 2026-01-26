@@ -26,10 +26,8 @@ def get_z_replacement(h):
 def encrypt_logic(text, h, m):
     key = get_dynamic_key(h, m)
     z_char = get_z_replacement(h)
-    
     # Pre-proses: Ubah semua huruf Z menjadi simbol spesifik jam tersebut
     processed_text = text.upper().replace("Z", z_char)
-    
     result = ""
     for char in processed_text:
         if char in ALPHABET:
@@ -37,14 +35,12 @@ def encrypt_logic(text, h, m):
             new_idx = (idx + key) % 25
             result += ALPHABET[new_idx]
         else:
-            # Karakter non-alfabet (termasuk simbol pengganti Z) tetap pada tempatnya
             result += char
     return result
 
 def decrypt_logic(text, h, m):
     key = get_dynamic_key(h, m)
     z_char = get_z_replacement(h)
-    
     result = ""
     for char in text.upper():
         if char in ALPHABET:
@@ -53,45 +49,45 @@ def decrypt_logic(text, h, m):
             result += ALPHABET[new_idx]
         else:
             result += char
-            
-    # Kembalikan simbol jam tersebut menjadi huruf Z kembali
     return result.replace(z_char, "Z")
 
-# --- Interface Streamlit ---
-st.title("🔐 Digital Clock Cipher: Hybrid Edition")
-st.markdown("Algoritma ini menggunakan waktu sebagai kunci dinamis dan mengganti huruf **Z** dengan simbol unik setiap jamnya.")
+# --- INTERFACE STREAMLIT ---
+st.title("🔐 Digital Clock Cipher (Symbol Edition)")
 
 # Setup Waktu Real-time
 tz = pytz.timezone('Asia/Jakarta')
 now = datetime.now(tz)
 
-# Fitur Pilihan Waktu (Otomatis vs Manual)
+# Sidebar Pengaturan Waktu
 st.sidebar.header("Pengaturan Waktu")
 mode_waktu = st.sidebar.radio("Pilih Mode Waktu:", ["Otomatis (Real-time)", "Input Manual"])
 
 if mode_waktu == "Otomatis (Real-time)":
     jam_final = now.hour
     menit_final = now.minute
-    st.sidebar.info(f"Waktu Saat Ini: {jam_final:02d}:{menit_final:02d}")
+    st.sidebar.info(f"Waktu Sistem: {jam_final:02d}:{menit_final:02d} WIB")
 else:
     jam_final = st.sidebar.number_input("Input Jam (0-23)", 0, 23, value=now.hour)
     menit_final = st.sidebar.number_input("Input Menit (0-59)", 0, 59, value=now.minute)
-
-# Tampilkan informasi simbol Z yang aktif
-current_z = get_z_replacement(jam_final)
-st.info(f"💡 Pada jam **{jam_final:02d}**, huruf **Z** diproses sebagai simbol: `{current_z}`")
 
 tab1, tab2 = st.tabs(["Enkripsi", "Dekripsi"])
 
 with tab1:
     st.subheader("Mode Enkripsi")
-    msg = st.text_area("Pesan Asli:", placeholder="Ketik pesan Anda di sini (Contoh: ZEBRA)...")
+    msg = st.text_area("Pesan Asli:", placeholder="Ketik pesan Anda di sini...")
     if st.button("Proses Enkripsi"):
         if msg:
             res = encrypt_logic(msg, jam_final, menit_final)
-            st.success("Berhasil Enkripsi!")
+            kunci = get_dynamic_key(jam_final, menit_final)
+            
+            st.success("Hasil Enkripsi:")
             st.code(res)
-            st.caption(f"Kunci yang digunakan: {(jam_final + menit_final) % 25}")
+            
+            # KETERANGAN HASIL (Dimunculkan kembali sesuai permintaan)
+            st.markdown(f"""
+            > ✅ **Enkripsi Berhasil!** > 🕒 **Waktu:** {jam_final:02d}:{menit_final:02d} WIB  
+            > 🔑 **Key Shift (Mod 25):** {kunci}
+            """)
         else:
             st.warning("Masukkan pesan terlebih dahulu.")
 
@@ -107,4 +103,4 @@ with tab2:
             st.warning("Masukkan kode terlebih dahulu.")
 
 st.divider()
-st.caption("Dikembangkan dengan Python & Streamlit • Algoritma Digital Clock Cipher")
+st.caption("Dikembangkan dengan Streamlit • Algoritma Digital Clock Cipher")
